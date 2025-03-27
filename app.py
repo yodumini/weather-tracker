@@ -16,6 +16,10 @@ CITIES = ['Taipei', 'Kaohsiung', 'Taichung']
 def index():
     return render_template('index.html', cities=CITIES)
 
+@app.route('/map')
+def map_view():
+    return render_template('map.html')
+
 @app.route('/get_weather', methods=['POST'])
 def get_weather():
     city = request.form.get('city', 'Taipei')

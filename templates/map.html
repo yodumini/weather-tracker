@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">台灣天氣地圖</h5>
+                <div id="taiwan-map" class="map-container">
+                    <!-- 地圖將在這裡動態加載 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">天氣資訊</h5>
+                <div id="weather-info" class="weather-info">
+                    <!-- 天氣資訊將在這裡顯示 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- 添加 Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- 添加 Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// 台灣主要城市及其座標
+const cities = {
+    'Taipei': { lat: 25.033, lng: 121.565, name: '台北' },
+    'New Taipei': { lat: 25.012, lng: 121.465, name: '新北' },
+    'Taoyuan': { lat: 24.993, lng: 121.301, name: '桃園' },
+    'Hsinchu': { lat: 24.803, lng: 120.968, name: '新竹' },
+    'Taichung': { lat: 24.147, lng: 120.684, name: '台中' },
+    'Changhua': { lat: 24.077, lng: 120.538, name: '彰化' },
+    'Yunlin': { lat: 23.708, lng: 120.431, name: '雲林' },
+    'Chiayi': { lat: 23.479, lng: 120.449, name: '嘉義' },
+    'Tainan': { lat: 22.997, lng: 120.212, name: '台南' },
+    'Kaohsiung': { lat: 22.627, lng: 120.301, name: '高雄' },
+    'Pingtung': { lat: 22.549, lng: 120.548, name: '屏東' },
+    'Yilan': { lat: 24.757, lng: 121.753, name: '宜蘭' },
+    'Hualien': { lat: 23.976, lng: 121.601, name: '花蓮' },
+    'Taitung': { lat: 22.758, lng: 121.144, name: '台東' }
+};
+
+let map;
+let markers = {};
+
+// 初始化地圖
+function initMap() {
+    map = L.map('taiwan-map').setView([23.5, 121], 7);
+    
+    // 添加 OpenStreetMap 底圖
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // 添加城市標記
+    Object.entries(cities).forEach(([city, data]) => {
+        const marker = L.marker([data.lat, data.lng])
+            .bindPopup(`<b>${data.name}</b>`)
+            .addTo(map);
+            
+        marker.on('click', () => getWeather(city));
+        markers[city] = marker;
+    });
+}
+
+// 獲取天氣資訊
+function getWeather(city) {
+    const weatherInfo = document.getElementById('weather-info');
+    weatherInfo.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>';
+    
+    fetch('/get_weather', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `city=${encodeURIComponent(city)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            weatherInfo.innerHTML = `
+                <div class="weather-card">
+                    <h3>${data.data['城市']}</h3>
+                    <div class="temperature">${data.data['溫度']}</div>
+                    <div class="weather-details">
+                        <p><i class="fas fa-thermometer-half"></i> 體感溫度: ${data.data['體感溫度']}</p>
+                        <p><i class="fas fa-tint"></i> 濕度: ${data.data['濕度']}</p>
+                        <p><i class="fas fa-wind"></i> 風速: ${data.data['風速']}</p>
+                        <p><i class="fas fa-clock"></i> 更新時間: ${data.data['更新時間']}</p>
+                    </div>
+                </div>
+            `;
+            
+            // 更新地圖標記的彈出窗口
+            markers[city].setPopupContent(`
+                <b>${data.data['城市']}</b><br>
+                溫度: ${data.data['溫度']}<br>
+                天氣: ${data.data['天氣狀況']}
+            `);
+        } else {
+            weatherInfo.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        weatherInfo.innerHTML = '<div class="alert alert-danger">獲取天氣信息時發生錯誤</div>';
+    });
+}
+
+// 頁面加載完成後初始化地圖
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+
+<style>
+.map-container {
+    width: 100%;
+    height: 600px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.weather-info {
+    margin-top: 20px;
+}
+
+.weather-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.temperature {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.weather-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.weather-details p {
+    margin: 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+/* 自定義地圖標記樣式 */
+.leaflet-popup-content {
+    text-align: center;
+}
+
+.leaflet-popup-content b {
+    color: #007bff;
+}
+</style>
+{% endblock %} 

@@ -33,6 +33,12 @@
             text-align: center;
             padding: 20px;
         }
+        .nav-link {
+            color: rgba(255,255,255,.8) !important;
+        }
+        .nav-link:hover {
+            color: #fff !important;
+        }
     </style>
 </head>
 <body>
@@ -41,6 +47,19 @@
             <a class="navbar-brand" href="/">
                 <i class="fas fa-cloud-sun"></i> 台灣天氣追蹤器
             </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-list"></i> 列表視圖</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/map"><i class="fas fa-map"></i> 地圖視圖</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
 
