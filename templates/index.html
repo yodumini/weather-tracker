@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">選擇城市</h5>
+                <form id="weatherForm">
+                    <div class="mb-3">
+                        <select class="form-select" id="citySelect" name="city">
+                            {% for city in cities %}
+                            <option value="{{ city }}">{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> 查詢天氣
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-2">正在獲取天氣信息...</p>
+        </div>
+        
+        <div id="weatherResult" class="weather-card" style="display: none;">
+            <div class="text-center">
+                <div class="weather-icon">
+                    <i class="fas fa-cloud-sun"></i>
+                </div>
+                <div class="temperature" id="temperature"></div>
+                <h3 id="cityName"></h3>
+            </div>
+            <div class="weather-details">
+                <div class="row">
+                    <div class="col-6">
+                        <p><i class="fas fa-thermometer-half"></i> 體感溫度: <span id="feelsLike"></span></p>
+                        <p><i class="fas fa-tint"></i> 濕度: <span id="humidity"></span></p>
+                    </div>
+                    <div class="col-6">
+                        <p><i class="fas fa-wind"></i> 風速: <span id="windSpeed"></span></p>
+                        <p><i class="fas fa-clock"></i> 更新時間: <span id="updateTime"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#weatherForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // 顯示載入動畫
+        $('.loading').show();
+        $('#weatherResult').hide();
+        $('#errorMessage').hide();
+        
+        // 獲取選中的城市
+        var city = $('#citySelect').val();
+        
+        // 發送 AJAX 請求
+        $.ajax({
+            url: '/get_weather',
+            method: 'POST',
+            data: { city: city },
+            success: function(response) {
+                $('.loading').hide();
+                
+                if (response.success) {
+                    // 更新天氣信息
+                    $('#cityName').text(response.data['城市']);
+                    $('#temperature').text(response.data['溫度']);
+                    $('#feelsLike').text(response.data['體感溫度']);
+                    $('#humidity').text(response.data['濕度']);
+                    $('#windSpeed').text(response.data['風速']);
+                    $('#updateTime').text(response.data['更新時間']);
+                    
+                    // 顯示結果
+                    $('#weatherResult').show();
+                } else {
+                    // 顯示錯誤信息
+                    $('#errorMessage').text(response.error).show();
+                }
+            },
+            error: function() {
+                $('.loading').hide();
+                $('#errorMessage').text('獲取天氣信息時發生錯誤，請稍後再試。').show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 
